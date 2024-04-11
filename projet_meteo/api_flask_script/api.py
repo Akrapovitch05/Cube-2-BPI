@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify
-from flask_restx import Api, Resource
+from flask_restx import Api, Resource, fields
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Column, Integer, Float, create_engine
 import paho.mqtt.client as mqtt
@@ -41,6 +41,11 @@ ns = api.namespace('raspberrypi', description='Endpoints for the Raspberry Pi Ze
 # Configure the MQTT client
 mqtt_client = mqtt.Client()
 
+body_model = api.model('BodyModel', {
+    'temperature': fields.Float(required=True, description='temperature'),
+    'humidity': fields.Float(required=True, description='humidity')
+})
+
 @ns.route('/temperature')
 class Temperature(Resource):
     def get(self):
@@ -56,7 +61,8 @@ class Temperature(Resource):
             return jsonify({'temperature': temperature, 'humidity': humidity})
         else:
             return jsonify({'error': 'No data available'}), 404
-
+        
+    @api.expect(body_model)
     def post(self):
         """
         Receive temperature and humidity data from the ESP and store it in the database.
